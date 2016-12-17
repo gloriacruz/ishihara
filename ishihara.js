@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
     resize: true,
     invert_colors: false,
     style: 0,
+    speed: 100,
     min_radius: 600,
     max_radius: 150,
     generate: function() {
@@ -103,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!generating) {
           return
         }
-        for (var tries = 0; tries < 100; tries++) {
+        for (var tries = 0; tries < ishihara_input.speed; tries++) {
           var shape = shape_factory.generate(circular_area);
           var nearest = tree.nearest(shape, 8);
 
@@ -168,6 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'style',
     {'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
      'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6}).name("Style");
+  gui.add(ishihara_input, 'speed', 10, 1000).name("Speed");
   gui.add(ishihara_input, 'min_radius', 10, 1000).name("Min radius");
   gui.add(ishihara_input, 'max_radius', 10, 1000).name("Max radius");
   gui.add(ishihara_input, 'generate').name("Generate");
