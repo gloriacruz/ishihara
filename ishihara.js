@@ -4,8 +4,8 @@ function CircleFactory() {
 }
 
 CircleFactory.prototype.generate = function(circular_area) {
-  var min_radius = (canvas.width + canvas.height) / ishihara_input.min_radius;
-  var max_radius = (canvas.width + canvas.height) / ishihara_input.max_radius;
+  var min_radius = ishihara_input.min_radius;
+  var max_radius = ishihara_input.max_radius;
   var radius = min_radius + Math.random() * (max_radius - min_radius);
 
   if (circular_area) {
@@ -63,6 +63,18 @@ CircleFactory.prototype.draw = function(ctx, circle) {
 var ishihara_input;
 
 document.addEventListener('DOMContentLoaded', function() {
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+
+  var max_width  = window.innerWidth;
+  var max_height = window.innerHeight;
+
+  ctx.canvas.width  = max_width;
+  ctx.canvas.height = max_height;
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   ishihara_input = {
     load_image: function() {
       var image_upload = document.getElementById('image_upload');
@@ -73,8 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
     invert_colors: false,
     style: 0,
     speed: 100,
-    min_radius: 600,
-    max_radius: 150,
+    min_radius: (canvas.width + canvas.height) / 600,
+    max_radius: (canvas.width + canvas.height) / 150,
     generate: function() {
       hide_gui_element('generate', true);
       hide_gui_element('clear', true);
@@ -100,13 +112,17 @@ document.addEventListener('DOMContentLoaded', function() {
       var area = canvas.width * canvas.height;
       var failed_in_row = 0;
 
+      var check_nearest = Math.ceil(
+        Math.max(ishihara_input.min_radius, ishihara_input.max_radius) /
+        Math.min(ishihara_input.min_radius, ishihara_input.max_radius) * 2);
+
       var step = function() {
         if (!generating) {
           return
         }
         for (var tries = 0; tries < ishihara_input.speed; tries++) {
           var shape = shape_factory.generate(circular_area);
-          var nearest = tree.nearest(shape, 8);
+          var nearest = tree.nearest(shape, check_nearest);
 
           var intersects = false;
 
@@ -170,8 +186,8 @@ document.addEventListener('DOMContentLoaded', function() {
     {'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
      'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6}).name("Style");
   gui.add(ishihara_input, 'speed', 10, 1000).name("Speed");
-  gui.add(ishihara_input, 'min_radius', 10, 1000).name("Min radius");
-  gui.add(ishihara_input, 'max_radius', 10, 1000).name("Max radius");
+  gui.add(ishihara_input, 'min_radius', 2, 50).name("Min radius");
+  gui.add(ishihara_input, 'max_radius', 2, 50).name("Max radius");
   gui.add(ishihara_input, 'generate').name("Generate");
   gui.add(ishihara_input, 'clear').name("Clear");
   gui.add(ishihara_input, 'stop').name("Stop");
@@ -187,18 +203,6 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   hide_gui_element('stop', true);
-
-  var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
-
-  var max_width  = window.innerWidth;
-  var max_height = window.innerHeight;
-
-  ctx.canvas.width  = max_width;
-  ctx.canvas.height = max_height;
-
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   var colors_on = [
     ['#F9BB82', '#EBA170', '#FCCD84'],
