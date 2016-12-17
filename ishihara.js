@@ -61,14 +61,141 @@ CircleFactory.prototype.draw = function(ctx, circle) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  var image_upload = document.getElementById('image_upload');
-  var generate_button = document.getElementById('generate_button');
-  var clear_button = document.getElementById('clear_button');
-  var stop_button = document.getElementById('stop_button');
+  var ishihara_input = {
+    load_image: function() {
+      var image_upload = document.getElementById('image_upload');
+      image_upload.click();
+    },
+    circular: true,
+    resize: true,
+    invert_colors: false,
+    style: 0,
+    generate: function() {
+      hide_gui_element('generate', true);
+      hide_gui_element('clear', true);
+      hide_gui_element('stop', false);
 
-  generate_button.disabled = false;
-  clear_button.disabled = false;
-  stop_button.disabled = true;
+      generating = true;
+
+      var circular_area = ishihara_input.circular;
+      var invert_colors = ishihara_input.invert_colors;
+
+      var draw_style = Number(ishihara_input.style);
+
+      var img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      var shape_factory = new CircleFactory();
+
+      var tree = new kdTree([], function(a, b) {
+        return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2);
+      }, ['x', 'y']);
+
+      var step_n = 0;
+      var area = canvas.width * canvas.height;
+
+      if (circular_area) {
+        var steps = area / 150;
+      } else {
+        var steps = area / 50;
+      }
+
+      var step = function() {
+        if (!generating) {
+          return
+        }
+        while (step_n < steps) {
+          var tries = 0;
+
+          while (true) {
+            tries++;
+            if (tries > 100) {
+              step_n++;
+              requestAnimationFrame(step);
+              return;
+            }
+
+            var shape = shape_factory.generate(circular_area);
+            var nearest = tree.nearest(shape, 8);
+
+            var intersects = false;
+
+            for (var j = 0; j < nearest.length; j++) {
+              var near_shape = nearest[j][0];
+              if (shape_factory.intersects(shape, near_shape)) {
+                intersects = true;
+                break;
+              }
+            }
+
+            if (intersects) {
+              continue;
+            }
+
+            step_n++;
+
+            if (shape_factory.overlaps_image(img_data, shape) != invert_colors) {
+              ctx.fillStyle = colors_on[draw_style][Math.floor(Math.random() * colors_on[draw_style].length)];
+            } else {
+              ctx.fillStyle = colors_off[draw_style][Math.floor(Math.random() * colors_off[draw_style].length)];
+            }
+
+            shape_factory.draw(ctx, shape);
+
+            tree.insert(shape);
+            if (step_n % 50 == 0) {
+              requestAnimationFrame(step);
+              return;
+            } else {
+              break;
+            }
+          }
+        }
+        generating = false;
+        hide_gui_element('generate', false);
+        hide_gui_element('clear', false);
+        hide_gui_element('stop', true);
+      };
+
+      requestAnimationFrame(step);
+    },
+    clear: function() {
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    },
+    stop: function() {
+      generating = false;
+
+      hide_gui_element('generate', false);
+      hide_gui_element('clear', false);
+      hide_gui_element('stop', true);
+    }
+  };
+
+  var gui = new dat.GUI();
+  gui.add(ishihara_input, 'load_image').name("Load image");
+  gui.add(ishihara_input, 'circular').name("Circular");
+  gui.add(ishihara_input, 'resize').name("Resize");
+  gui.add(ishihara_input, 'invert_colors').name("Invert colors");
+  gui.add(ishihara_input, 'style',
+    {'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
+     'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6}).name("Style");
+  gui.add(ishihara_input, 'generate').name("Generate");
+  gui.add(ishihara_input, 'clear').name("Clear");
+  gui.add(ishihara_input, 'stop').name("Stop");
+
+  var hide_gui_element = function(property, hide) {
+    for (var i = 0; i < gui.__controllers.length; i++) {
+      var controller = gui.__controllers[i];
+      if (controller.property === property) {
+        controller.domElement.parentElement.parentElement.hidden = hide;
+        return;
+      }
+    }
+  };
+
+  hide_gui_element('stop', true);
 
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
@@ -108,12 +235,12 @@ document.addEventListener('DOMContentLoaded', function() {
   canvas.addEventListener('mousedown', function(e) {
     if (e.button === 0) {
       painting = true;
-  
+
       x = e.pageX - this.offsetLeft;
       y = e.pageY - this.offsetTop;
-  
+
       if (generating) return;
-  
+
       ctx.beginPath();
       ctx.fillStyle = e.ctrlKey ? '#FFF' : '#000';
       ctx.arc(x, y, 7.25, 0, 2 * Math.PI);
@@ -124,12 +251,12 @@ document.addEventListener('DOMContentLoaded', function() {
   canvas.addEventListener('mouseup', function(e) {
     if (e.button === 0) {
       painting = false;
-  
+
       x = e.pageX - this.offsetLeft;
       y = e.pageY - this.offsetTop;
-  
+
       if (generating) return;
-  
+
       ctx.beginPath();
       ctx.fillStyle = e.ctrlKey ? '#FFF' : '#000';
       ctx.arc(x, y, 7.25, 0, 2 * Math.PI);
@@ -165,8 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var img = new Image();
       img.src = event.target.result;
       img.onload = function() {
-        var resize = document.getElementById('resize_checkbox').checked;
-        if (resize) {
+        if (ishihara_input.resize) {
           var ratio = Math.min(max_width / img.width, max_height / img.height);
           canvas.width  = img.width  * ratio;
           canvas.height = img.height * ratio;
@@ -179,109 +305,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     reader.readAsDataURL(e.target.files[0]);
   }, false);
-
-  stop_button.addEventListener('click', function() {
-    generating = false;
-
-    generate_button.disabled = false;
-    clear_button.disabled = false;
-    stop_button.disabled = true;
-  });
-
-  clear_button.addEventListener('click', function() {
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  });
-
-  generate_button.addEventListener('click', function() {
-    generate_button.disabled = true;
-    clear_button.disabled = true;
-    stop_button.disabled = false;
-
-    generating = true;
-
-    var circular_area = document.getElementById('circular_checkbox').checked;
-    var invert_colors = document.getElementById('invert_checkbox').checked;
-
-    var select = document.getElementById('color_style');
-    var draw_style = select.options[select.selectedIndex].value;
-
-    var img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    var shape_factory = new CircleFactory();
-
-    var tree = new kdTree([], function(a, b) {
-      return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2);
-    }, ['x', 'y']);
-
-    var step_n = 0;
-    var area = canvas.width * canvas.height;
-
-    if (circular_area) {
-      var steps = area / 150;
-    } else {
-      var steps = area / 50;
-    }
-
-    var step = function() {
-      if (!generating) {
-        return
-      }
-      while (step_n < steps) {
-        var tries = 0;
-
-        while (true) {
-          tries++;
-          if (tries > 100) {
-            step_n++;
-            requestAnimationFrame(step);
-            return;
-          }
-
-          var shape = shape_factory.generate(circular_area);
-          var nearest = tree.nearest(shape, 8);
-
-          var intersects = false;
-
-          for (var j = 0; j < nearest.length; j++) {
-            var near_shape = nearest[j][0];
-            if (shape_factory.intersects(shape, near_shape)) {
-              intersects = true;
-              break;
-            }
-          }
-
-          if (intersects) {
-            continue;
-          }
-
-          step_n++;
-
-          if (shape_factory.overlaps_image(img_data, shape) != invert_colors) {
-            ctx.fillStyle = colors_on[draw_style][Math.floor(Math.random() * colors_on[draw_style].length)];
-          } else {
-            ctx.fillStyle = colors_off[draw_style][Math.floor(Math.random() * colors_off[draw_style].length)];
-          }
-
-          shape_factory.draw(ctx, shape);
-
-          tree.insert(shape);
-          if (step_n % 50 == 0) {
-            requestAnimationFrame(step);
-            return;
-          } else {
-            break;
-          }
-        }
-      }
-      generating = false;
-      generate_button.disabled = false;
-      clear_button.disabled = false;
-      stop_button.disabled = true;
-    };
-
-    requestAnimationFrame(step);
-  });
 });

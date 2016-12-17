@@ -27,6 +27,7 @@
             }
         </style>
         <script src="kdTree.js"></script>
+        <script src="dat.gui.min.js"></script>
         <script src="ishihara.js"></script>
 
         <script>
@@ -48,40 +49,5 @@
         <center>
             <canvas id="canvas">Your browser doesn't supports canvas.</canvas>
         </center>
-        <table>
-            <tr>
-                <td>
-                    <input type="file" id="image_upload" accept="image/*"/>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <input id="circular_checkbox" type="checkbox" checked /><small>Circular</small>
-                    <input id="resize_checkbox" type="checkbox" checked /><small>Resize</small>
-                    <input id="invert_checkbox" type="checkbox" /><small>Invert colors</small>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <small>Style</small>
-                    <select id="color_style">
-                        <option value="0" selected>General 1</option>
-                        <option value="1">General 2</option>
-                        <option value="2">General 3</option>
-                        <option value="3">Protanopia</option>
-                        <option value="4">Protanomaly</option>
-                        <option value="5">Viewable by all</option>
-                        <option value="6">Colorblind only</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <button id="generate_button">Generate</button>
-                    <button id="clear_button">Clear</button>
-                    <button id="stop_button">Stop</button>
-                </td>
-            </tr>
-        </table>
     </body>
 </html>
