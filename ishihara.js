@@ -4,8 +4,8 @@ function CircleFactory() {
 }
 
 CircleFactory.prototype.generate = function(circular_area) {
-  var min_radius = (canvas.width + canvas.height) / 600;
-  var max_radius = (canvas.width + canvas.height) / 150;
+  var min_radius = (canvas.width + canvas.height) / ishihara_input.min_radius;
+  var max_radius = (canvas.width + canvas.height) / ishihara_input.max_radius;
   var radius = min_radius + Math.random() * (max_radius - min_radius);
 
   if (circular_area) {
@@ -60,8 +60,10 @@ CircleFactory.prototype.draw = function(ctx, circle) {
   ctx.closePath();
 }
 
+var ishihara_input;
+
 document.addEventListener('DOMContentLoaded', function() {
-  var ishihara_input = {
+  ishihara_input = {
     load_image: function() {
       var image_upload = document.getElementById('image_upload');
       image_upload.click();
@@ -70,6 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
     resize: true,
     invert_colors: false,
     style: 0,
+    min_radius: 600,
+    max_radius: 150,
     generate: function() {
       hide_gui_element('generate', true);
       hide_gui_element('clear', true);
@@ -181,6 +185,8 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'style',
     {'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
      'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6}).name("Style");
+  gui.add(ishihara_input, 'min_radius', 10, 1000).name("Min radius");
+  gui.add(ishihara_input, 'max_radius', 10, 1000).name("Max radius");
   gui.add(ishihara_input, 'generate').name("Generate");
   gui.add(ishihara_input, 'clear').name("Clear");
   gui.add(ishihara_input, 'stop').name("Stop");
