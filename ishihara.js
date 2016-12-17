@@ -96,70 +96,53 @@ document.addEventListener('DOMContentLoaded', function() {
         return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2);
       }, ['x', 'y']);
 
-      var step_n = 0;
       var area = canvas.width * canvas.height;
-
-      if (circular_area) {
-        var steps = area / 150;
-      } else {
-        var steps = area / 50;
-      }
+      var failed_in_row = 0;
 
       var step = function() {
         if (!generating) {
           return
         }
-        while (step_n < steps) {
-          var tries = 0;
+        for (var tries = 0; tries < 100; tries++) {
+          var shape = shape_factory.generate(circular_area);
+          var nearest = tree.nearest(shape, 8);
 
-          while (true) {
-            tries++;
-            if (tries > 100) {
-              step_n++;
-              requestAnimationFrame(step);
-              return;
-            }
+          var intersects = false;
 
-            var shape = shape_factory.generate(circular_area);
-            var nearest = tree.nearest(shape, 8);
-
-            var intersects = false;
-
-            for (var j = 0; j < nearest.length; j++) {
-              var near_shape = nearest[j][0];
-              if (shape_factory.intersects(shape, near_shape)) {
-                intersects = true;
-                break;
-              }
-            }
-
-            if (intersects) {
-              continue;
-            }
-
-            step_n++;
-
-            if (shape_factory.overlaps_image(img_data, shape) != invert_colors) {
-              ctx.fillStyle = colors_on[draw_style][Math.floor(Math.random() * colors_on[draw_style].length)];
-            } else {
-              ctx.fillStyle = colors_off[draw_style][Math.floor(Math.random() * colors_off[draw_style].length)];
-            }
-
-            shape_factory.draw(ctx, shape);
-
-            tree.insert(shape);
-            if (step_n % 50 == 0) {
-              requestAnimationFrame(step);
-              return;
-            } else {
+          for (var j = 0; j < nearest.length; j++) {
+            var near_shape = nearest[j][0];
+            if (shape_factory.intersects(shape, near_shape)) {
+              intersects = true;
               break;
             }
           }
+
+          if (intersects) {
+            failed_in_row++;
+            continue;
+          }
+
+          failed_in_row = 0;
+
+          if (shape_factory.overlaps_image(img_data, shape) != invert_colors) {
+            ctx.fillStyle = colors_on[draw_style][Math.floor(Math.random() * colors_on[draw_style].length)];
+          } else {
+            ctx.fillStyle = colors_off[draw_style][Math.floor(Math.random() * colors_off[draw_style].length)];
+          }
+
+          shape_factory.draw(ctx, shape);
+
+          tree.insert(shape);
         }
-        generating = false;
-        hide_gui_element('generate', false);
-        hide_gui_element('clear', false);
-        hide_gui_element('stop', true);
+
+        if (failed_in_row >= 1000) {
+          generating = false;
+          hide_gui_element('generate', false);
+          hide_gui_element('clear', false);
+          hide_gui_element('stop', true);
+        } else {
+          requestAnimationFrame(step);
+        }
       };
 
       requestAnimationFrame(step);
