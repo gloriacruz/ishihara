@@ -1,11 +1,12 @@
 'use strict';
 
-function CircleFactory() {
+function CircleFactory(options) {
+  this.options = options;
 }
 
 CircleFactory.prototype.generate = function(circular_area) {
-  var min_radius = ishihara_input.min_radius;
-  var max_radius = ishihara_input.max_radius;
+  var min_radius = this.options.min_radius;
+  var max_radius = this.options.max_radius;
   var radius = min_radius + Math.random() * (max_radius - min_radius);
 
   if (circular_area) {
@@ -60,8 +61,6 @@ CircleFactory.prototype.draw = function(ctx, circle) {
   ctx.closePath();
 }
 
-var ishihara_input;
-
 document.addEventListener('DOMContentLoaded', function() {
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
@@ -75,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ishihara_input = {
+  var ishihara_input = {
     load_image: function() {
       var image_upload = document.getElementById('image_upload');
       image_upload.click();
@@ -103,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      var shape_factory = new CircleFactory();
+      var shape_factory = new CircleFactory(ishihara_input);
 
       var tree = new kdTree([], function(a, b) {
         return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2);
