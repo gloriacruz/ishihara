@@ -185,8 +185,12 @@ document.addEventListener('DOMContentLoaded', function() {
     {'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
      'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6}).name("Style");
   gui.add(ishihara_input, 'speed', 10, 1000).name("Speed");
-  gui.add(ishihara_input, 'min_radius', 2, 50).name("Min radius");
-  gui.add(ishihara_input, 'max_radius', 2, 50).name("Max radius");
+  gui.add(ishihara_input, 'min_radius', 2, 50).name("Min radius").onChange(function(value) {
+    ishihara_input.max_radius = Math.max(ishihara_input.min_radius, ishihara_input.max_radius);
+  }).listen();
+  gui.add(ishihara_input, 'max_radius', 2, 50).name("Max radius").onChange(function(value) {
+    ishihara_input.min_radius = Math.min(ishihara_input.min_radius, ishihara_input.max_radius);
+  }).listen();
   gui.add(ishihara_input, 'generate').name("Generate");
   gui.add(ishihara_input, 'clear').name("Clear");
   gui.add(ishihara_input, 'stop').name("Stop");
