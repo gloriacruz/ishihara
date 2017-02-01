@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ['#635A4A', '#817865', '#9C9C84'],
     ['#635A4A', '#817865', '#9C9C84'],
     ['#9C9C9C'],
-    ['#828200', '#669A1B']
+    ['#828200', '#669A1B', '#828200', '#669A1B', '#ED6311']
   ];
 
   var painting = false;
