@@ -56,7 +56,7 @@ CircleFactory.prototype.intersects = function(circle1, circle2) {
 
 CircleFactory.prototype.draw = function(ctx, circle) {
   ctx.beginPath();
-  ctx.arc(circle.x, circle.y, circle.radius, 0, 2 * Math.PI);
+  ctx.arc(circle.x, circle.y, circle.radius * this.options.draw_ratio, 0, 2 * Math.PI);
   ctx.fill();
   ctx.closePath();
 }
@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
     speed: 100,
     min_radius: (canvas.width + canvas.height) / 600,
     max_radius: (canvas.width + canvas.height) / 150,
+    draw_ratio: 1,
     generate: function() {
       hide_gui_element('generate', true);
       hide_gui_element('clear', true);
@@ -191,6 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'max_radius', 2, 50).name("Max radius").onChange(function(value) {
     ishihara_input.min_radius = Math.min(ishihara_input.min_radius, ishihara_input.max_radius);
   }).listen();
+  gui.add(ishihara_input, 'draw_ratio', 0, 1, 0.01).name("Draw ratio");
   gui.add(ishihara_input, 'generate').name("Generate");
   gui.add(ishihara_input, 'clear').name("Clear");
   gui.add(ishihara_input, 'stop').name("Stop");
