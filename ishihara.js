@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
           tree.insert(shape);
         }
 
-        if (failed_in_row >= 1000) {
+        if (failed_in_row >= 10000) {
           generating = false;
           hide_gui_element('generate', false);
           hide_gui_element('clear', false);
