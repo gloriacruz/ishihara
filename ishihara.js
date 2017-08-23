@@ -248,6 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     min_radius: (canvas.width + canvas.height) / 600,
     max_radius: (canvas.width + canvas.height) / 150,
     draw_ratio: 1,
+    stop_after: 10000,
     shape_factory: 'Circle',
     sides: 4,
     pointiness: 0.75,
@@ -330,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
 
-        if (failed_in_row >= 10000) {
+        if (failed_in_row >= ishihara_input.stop_after) {
           generating = false;
           hide_gui_element('generate', false);
           hide_gui_element('clear', false);
@@ -380,6 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ishihara_input.min_radius = Math.min(ishihara_input.min_radius, ishihara_input.max_radius);
   }).listen();
   gui.add(ishihara_input, 'draw_ratio', 0, 1, 0.01).name("Draw ratio");
+  gui.add(ishihara_input, 'stop_after', 1000, 100000, 1).name("Stop after");
   gui.add(ishihara_input, 'generate').name("Generate");
   gui.add(ishihara_input, 'clear').name("Clear");
   gui.add(ishihara_input, 'stop').name("Stop");
