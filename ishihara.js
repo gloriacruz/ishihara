@@ -19,7 +19,7 @@ CircleFactory.prototype.generate = function(circular_area) {
     var y = radius + Math.random() * (canvas.height - radius * 2);
   }
 
-  return {x: x, y: y, radius: radius};
+  return [{x: x, y: y, radius: radius}];
 };
 
 CircleFactory.prototype.overlaps_image = function(img_data, circle) {
@@ -89,7 +89,7 @@ RegularPolygonFactory.prototype.generate = function(circular_area) {
   }
   polygon.rotate(Math.random() * 2 * Math.PI);
 
-  return polygon;
+  return [polygon];
 };
 
 RegularPolygonFactory.prototype.overlaps_image = function(img_data, polygon) {
@@ -131,6 +131,48 @@ RegularPolygonFactory.prototype.draw = function(ctx, polygon) {
   }
   ctx.closePath();
   ctx.fill();
+};
+
+function CrossFactory() {
+  RegularPolygonFactory.apply(this, arguments);
+}
+
+CrossFactory.prototype = Object.create(RegularPolygonFactory.prototype);
+CrossFactory.prototype.constructor = RegularPolygonFactory;
+
+CrossFactory.prototype.generate = function(circular_area) {
+  var min_radius = this.options.min_radius;
+  var max_radius = this.options.max_radius;
+  var radius = min_radius + Math.random() * (max_radius - min_radius);
+
+  if (circular_area) {
+    var angle = Math.random() * 2 * Math.PI;
+    var distance_from_center = Math.random() * (Math.min(canvas.width, canvas.height) * 0.48 - radius);
+    var x = canvas.width  * 0.5 + Math.cos(angle) * distance_from_center;
+    var y = canvas.height * 0.5 + Math.sin(angle) * distance_from_center;
+  } else {
+    var x = radius + Math.random() * (canvas.width  - radius * 2);
+    var y = radius + Math.random() * (canvas.height - radius * 2);
+  }
+
+  var polygon1 = new Polygon(x, y);
+  var polygon2 = new Polygon(x, y);
+
+  polygon1.addPoint({x: -1 * radius, y: -1/4 * radius})
+  polygon1.addPoint({x:  1 * radius, y: -1/4 * radius})
+  polygon1.addPoint({x:  1 * radius, y:  1/4 * radius})
+  polygon1.addPoint({x: -1 * radius, y:  1/4 * radius})
+
+  polygon2.addPoint({x: -1 * radius, y: -1/4 * radius})
+  polygon2.addPoint({x:  1 * radius, y: -1/4 * radius})
+  polygon2.addPoint({x:  1 * radius, y:  1/4 * radius})
+  polygon2.addPoint({x: -1 * radius, y:  1/4 * radius})
+
+  var rot = Math.random() * 2 * Math.PI;
+  polygon1.rotate(rot);
+  polygon2.rotate(rot + Math.PI / 2);
+
+  return [polygon1, polygon2];
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -178,7 +220,9 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       var shape_factory = {
-        'Circle': CircleFactory, 'Regular polygon': RegularPolygonFactory
+        'Circle': CircleFactory,
+        'Regular polygon': RegularPolygonFactory,
+        'Cross': CrossFactory
       }[ishihara_input.shape_factory];
       shape_factory = new shape_factory(JSON.parse(JSON.stringify(ishihara_input)));
 
@@ -196,36 +240,45 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!generating) {
           return;
         }
+
+        outer:
         for (var tries = 0; tries < ishihara_input.speed; tries++) {
-          var shape = shape_factory.generate(circular_area);
-          var nearest = tree.nearest(shape, check_nearest);
+          var shapes = shape_factory.generate(circular_area);
 
-          var intersects = false;
+          for (var i = 0; i < shapes.length; i++) {
+            var shape = shapes[i];
 
-          for (var j = 0; j < nearest.length; j++) {
-            var near_shape = nearest[j][0];
-            if (shape_factory.intersects(shape, near_shape)) {
-              intersects = true;
-              break;
+            var nearest = tree.nearest(shape, check_nearest);
+            for (var j = 0; j < nearest.length; j++) {
+              var near_shape = nearest[j][0];
+              if (shape_factory.intersects(shape, near_shape)) {
+                failed_in_row++;
+                continue outer;
+              }
             }
-          }
-
-          if (intersects) {
-            failed_in_row++;
-            continue;
           }
 
           failed_in_row = 0;
 
-          if (shape_factory.overlaps_image(img_data, shape) !== invert_colors) {
+          var overlaps_image = false;
+
+          for (var i = 0; i < shapes.length; i++) {
+            if (shape_factory.overlaps_image(img_data, shapes[i])) {
+              overlaps_image = true;
+              break;
+            }
+          }
+
+          if (overlaps_image !== invert_colors) {
             ctx.fillStyle = colors_on[draw_style][Math.floor(Math.random() * colors_on[draw_style].length)];
           } else {
             ctx.fillStyle = colors_off[draw_style][Math.floor(Math.random() * colors_off[draw_style].length)];
           }
 
-          shape_factory.draw(ctx, shape);
-
-          tree.insert(shape);
+          for (var i = 0; i < shapes.length; i++) {
+            shape_factory.draw(ctx, shapes[i]);
+            tree.insert(shapes[i]);
+          }
         }
 
         if (failed_in_row >= 10000) {
@@ -258,9 +311,9 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'circular').name("Circular");
   gui.add(ishihara_input, 'resize').name("Resize");
   gui.add(ishihara_input, 'invert_colors').name("Invert colors");
-  gui.add(ishihara_input, 'shape_factory', ['Circle', 'Regular polygon']).onChange(function(value) {
+  gui.add(ishihara_input, 'shape_factory', ['Circle', 'Regular polygon', 'Cross']).onChange(function(value) {
     hide_gui_element('sides', value !== 'Regular polygon');
-  });
+  }).name("Shape");
   gui.add(ishihara_input, 'sides', 3, 12, 1);
   gui.add(ishihara_input, 'style', {
     'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
