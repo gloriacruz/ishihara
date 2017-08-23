@@ -61,6 +61,78 @@ CircleFactory.prototype.draw = function(ctx, circle) {
   ctx.closePath();
 }
 
+function RegularPolygonFactory(options) {
+  this.options = options;
+}
+
+RegularPolygonFactory.prototype.generate = function(circular_area) {
+  var min_radius = this.options.min_radius;
+  var max_radius = this.options.max_radius;
+  var radius = min_radius + Math.random() * (max_radius - min_radius);
+
+  if (circular_area) {
+    var angle = Math.random() * 2 * Math.PI;
+    var distance_from_center = Math.random() * (Math.min(canvas.width, canvas.height) * 0.48 - radius);
+    var x = canvas.width  * 0.5 + Math.cos(angle) * distance_from_center;
+    var y = canvas.height * 0.5 + Math.sin(angle) * distance_from_center;
+  } else {
+    var x = radius + Math.random() * (canvas.width  - radius * 2);
+    var y = radius + Math.random() * (canvas.height - radius * 2);
+  }
+
+  var polygon = new Polygon(x, y);
+  for (var i = 0; i < this.options.sides; i++) {
+    polygon.addPoint({
+      x: Math.cos(Math.PI * 2 * (i / this.options.sides)) * radius,
+      y: Math.sin(Math.PI * 2 * (i / this.options.sides)) * radius,
+    })
+  }
+  polygon.rotate(Math.random() * 2 * Math.PI)
+
+  return polygon;
+}
+
+RegularPolygonFactory.prototype.overlaps_image = function(img_data, polygon) {
+  var points = polygon.points.concat({x: polygon.x, y: polygon.y})
+
+  for (var i = 0; i < points.length; i++) {
+    var x = points[i].x;
+    var y = points[i].y;
+
+    var index = (Math.floor(y) * img_data.width + Math.floor(x)) * 4;
+
+    var r = img_data.data[index];
+    var g = img_data.data[index + 1];
+    var b = img_data.data[index + 2];
+    var a = img_data.data[index + 3];
+
+    if ((r + g + b) * (a / 255) < 127) {
+      return true;
+    }
+  }
+  return false;
+}
+
+RegularPolygonFactory.prototype.intersects = function(polygon1, polygon2) {
+  return polygon1.intersectsWith(polygon2);
+}
+
+RegularPolygonFactory.prototype.draw = function(ctx, polygon) {
+  ctx.beginPath();
+  ctx.moveTo(
+    polygon.x + polygon.points[0].x * this.options.draw_ratio,
+    polygon.y + polygon.points[0].y * this.options.draw_ratio
+  );
+  for (var i = 1; i < polygon.points.length; i++) {
+    ctx.lineTo(
+      polygon.x + polygon.points[i].x * this.options.draw_ratio,
+      polygon.y + polygon.points[i].y * this.options.draw_ratio
+    );
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
@@ -87,6 +159,8 @@ document.addEventListener('DOMContentLoaded', function() {
     min_radius: (canvas.width + canvas.height) / 600,
     max_radius: (canvas.width + canvas.height) / 150,
     draw_ratio: 1,
+    shape_factory: 'Circle',
+    sides: 4,
     generate: function() {
       hide_gui_element('generate', true);
       hide_gui_element('clear', true);
@@ -103,7 +177,10 @@ document.addEventListener('DOMContentLoaded', function() {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      var shape_factory = new CircleFactory(ishihara_input);
+      var shape_factory = {
+        'Circle': CircleFactory, 'Regular polygon': RegularPolygonFactory
+      }[ishihara_input.shape_factory]
+      var shape_factory = new shape_factory(JSON.parse(JSON.stringify(ishihara_input)));
 
       var tree = new kdTree([], function(a, b) {
         return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2);
@@ -182,9 +259,14 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'circular').name("Circular");
   gui.add(ishihara_input, 'resize').name("Resize");
   gui.add(ishihara_input, 'invert_colors').name("Invert colors");
-  gui.add(ishihara_input, 'style',
-    {'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
-     'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6}).name("Style");
+  gui.add(ishihara_input, 'shape_factory', ['Circle', 'Regular polygon']).onChange(function(value) {
+    hide_gui_element('sides', value !== 'Regular polygon');
+  });
+  gui.add(ishihara_input, 'sides', 3, 12, 1);
+  gui.add(ishihara_input, 'style', {
+    'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
+    'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6
+  }).name("Style");
   gui.add(ishihara_input, 'speed', 10, 1000).name("Speed");
   gui.add(ishihara_input, 'min_radius', 2, 50).name("Min radius").onChange(function(value) {
     ishihara_input.max_radius = Math.max(ishihara_input.min_radius, ishihara_input.max_radius);
@@ -207,6 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
+  hide_gui_element('sides', true);
   hide_gui_element('stop', true);
 
   var colors_on = [
