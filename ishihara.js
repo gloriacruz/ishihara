@@ -197,25 +197,20 @@ StarFactory.prototype.generate = function(circular_area) {
     var y = radius + Math.random() * (canvas.height - radius * 2);
   }
 
-  var polygon1 = new Polygon(x, y);
-  var polygon2 = new Polygon(x, y);
+  var rot = Math.random() * 2 * Math.PI;
+  var polygons = [];
 
-  for (var i = 0; i < 4; i++) {
-    polygon1.addPoint({
-      x: Math.cos(Math.PI * 2 * (i / 4)) * radius,
-      y: Math.sin(Math.PI * 2 * (i / 4)) * radius / 4,
-    });
-    polygon2.addPoint({
-      x: Math.cos(Math.PI * 2 * (i / 4)) * radius,
-      y: Math.sin(Math.PI * 2 * (i / 4)) * radius / 4,
-    });
+  for (var i = 0; i < this.options.sides; i++) {
+    var polygon = new Polygon(x, y);
+    polygon.addPoint({x: -radius / 4, y: 0});
+    polygon.addPoint({x: radius / 4,  y: 0});
+    polygon.addPoint({x: 0,           y: radius});
+
+    polygon.rotate((i / this.options.sides) * Math.PI * 2 + rot);
+    polygons.push(polygon);
   }
 
-  var rot = Math.random() * 2 * Math.PI;
-  polygon1.rotate(rot);
-  polygon2.rotate(rot + Math.PI / 2);
-
-  return [polygon1, polygon2];
+  return polygons;
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -367,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'resize').name("Resize");
   gui.add(ishihara_input, 'invert_colors').name("Invert colors");
   gui.add(ishihara_input, 'shape_factory', ['Circle', 'Regular polygon', 'Cross', 'Star']).onChange(function(value) {
-    hide_gui_element('sides', value !== 'Regular polygon');
+    hide_gui_element('sides', value !== 'Regular polygon' && value !== 'Star');
   }).name("Shape");
   gui.add(ishihara_input, 'sides', 3, 12, 1);
   gui.add(ishihara_input, 'style', {
