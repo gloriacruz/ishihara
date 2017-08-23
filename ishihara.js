@@ -158,15 +158,15 @@ CrossFactory.prototype.generate = function(circular_area) {
   var polygon1 = new Polygon(x, y);
   var polygon2 = new Polygon(x, y);
 
-  polygon1.addPoint({x: -1 * radius, y: -1/4 * radius})
-  polygon1.addPoint({x:  1 * radius, y: -1/4 * radius})
-  polygon1.addPoint({x:  1 * radius, y:  1/4 * radius})
-  polygon1.addPoint({x: -1 * radius, y:  1/4 * radius})
+  polygon1.addPoint({x: -radius, y: -(1 - this.options.pointiness) * radius})
+  polygon1.addPoint({x:  radius, y: -(1 - this.options.pointiness) * radius})
+  polygon1.addPoint({x:  radius, y:  (1 - this.options.pointiness) * radius})
+  polygon1.addPoint({x: -radius, y:  (1 - this.options.pointiness) * radius})
 
-  polygon2.addPoint({x: -1 * radius, y: -1/4 * radius})
-  polygon2.addPoint({x:  1 * radius, y: -1/4 * radius})
-  polygon2.addPoint({x:  1 * radius, y:  1/4 * radius})
-  polygon2.addPoint({x: -1 * radius, y:  1/4 * radius})
+  polygon2.addPoint({x: -radius, y: -(1 - this.options.pointiness) * radius})
+  polygon2.addPoint({x:  radius, y: -(1 - this.options.pointiness) * radius})
+  polygon2.addPoint({x:  radius, y:  (1 - this.options.pointiness) * radius})
+  polygon2.addPoint({x: -radius, y:  (1 - this.options.pointiness) * radius})
 
   var rot = Math.random() * 2 * Math.PI;
   polygon1.rotate(rot);
@@ -202,9 +202,9 @@ StarFactory.prototype.generate = function(circular_area) {
 
   for (var i = 0; i < this.options.sides; i++) {
     var polygon = new Polygon(x, y);
-    polygon.addPoint({x: -radius / 4, y: 0});
-    polygon.addPoint({x: radius / 4,  y: 0});
-    polygon.addPoint({x: 0,           y: radius});
+    polygon.addPoint({x: -(1 - this.options.pointiness) * radius, y: 0});
+    polygon.addPoint({x:  (1 - this.options.pointiness) * radius, y: 0});
+    polygon.addPoint({x:  0,                                      y: radius});
 
     polygon.rotate((i / this.options.sides) * Math.PI * 2 + rot);
     polygons.push(polygon);
@@ -250,6 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     draw_ratio: 1,
     shape_factory: 'Circle',
     sides: 4,
+    pointiness: 0.75,
     generate: function() {
       hide_gui_element('generate', true);
       hide_gui_element('clear', true);
@@ -363,8 +364,10 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'invert_colors').name("Invert colors");
   gui.add(ishihara_input, 'shape_factory', ['Circle', 'Regular polygon', 'Cross', 'Star']).onChange(function(value) {
     hide_gui_element('sides', value !== 'Regular polygon' && value !== 'Star');
+    hide_gui_element('pointiness', value !== 'Cross' && value !== 'Star');
   }).name("Shape");
-  gui.add(ishihara_input, 'sides', 3, 12, 1);
+  gui.add(ishihara_input, 'sides', 3, 12, 1).name("Sides");
+  gui.add(ishihara_input, 'pointiness', 0.01, 0.99).name("Pointiness");
   gui.add(ishihara_input, 'style', {
     'General 1': 0, 'General 2': 1, 'General 3': 2, 'Protanopia': 3,
     'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6
@@ -392,6 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   hide_gui_element('sides', true);
+  hide_gui_element('pointiness', true);
   hide_gui_element('stop', true);
 
   var colors_on = [
