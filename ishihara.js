@@ -20,15 +20,15 @@ CircleFactory.prototype.generate = function(circular_area) {
   }
 
   return {x: x, y: y, radius: radius};
-}
+};
 
 CircleFactory.prototype.overlaps_image = function(img_data, circle) {
   var x = circle.x;
   var y = circle.y;
   var r = circle.radius;
 
-  var points_x = [x, x, x, x-r, x+r, x-r*0.93, x-r*0.93, x+r*0.93, x+r*0.93]
-  var points_y = [y, y-r, y+r, y, y, y+r*0.93, y-r*0.93, y+r*0.93, y-r*0.93]
+  var points_x = [x, x, x, x-r, x+r, x-r*0.93, x-r*0.93, x+r*0.93, x+r*0.93];
+  var points_y = [y, y-r, y+r, y, y, y+r*0.93, y-r*0.93, y+r*0.93, y-r*0.93];
 
   for (var i = 0; i < points_x.length; i++) {
     var x = points_x[i];
@@ -46,20 +46,20 @@ CircleFactory.prototype.overlaps_image = function(img_data, circle) {
     }
   }
   return false;
-}
+};
 
 CircleFactory.prototype.intersects = function(circle1, circle2) {
   return Math.pow(circle2.x - circle1.x, 2) +
          Math.pow(circle2.y - circle1.y, 2) <
          Math.pow(circle1.radius + circle2.radius, 2);
-}
+};
 
 CircleFactory.prototype.draw = function(ctx, circle) {
   ctx.beginPath();
   ctx.arc(circle.x, circle.y, circle.radius * this.options.draw_ratio, 0, 2 * Math.PI);
   ctx.fill();
   ctx.closePath();
-}
+};
 
 function RegularPolygonFactory(options) {
   this.options = options;
@@ -85,15 +85,15 @@ RegularPolygonFactory.prototype.generate = function(circular_area) {
     polygon.addPoint({
       x: Math.cos(Math.PI * 2 * (i / this.options.sides)) * radius,
       y: Math.sin(Math.PI * 2 * (i / this.options.sides)) * radius,
-    })
+    });
   }
-  polygon.rotate(Math.random() * 2 * Math.PI)
+  polygon.rotate(Math.random() * 2 * Math.PI);
 
   return polygon;
-}
+};
 
 RegularPolygonFactory.prototype.overlaps_image = function(img_data, polygon) {
-  var points = polygon.points.concat({x: polygon.x, y: polygon.y})
+  var points = polygon.points.concat({x: polygon.x, y: polygon.y});
 
   for (var i = 0; i < points.length; i++) {
     var x = points[i].x;
@@ -111,11 +111,11 @@ RegularPolygonFactory.prototype.overlaps_image = function(img_data, polygon) {
     }
   }
   return false;
-}
+};
 
 RegularPolygonFactory.prototype.intersects = function(polygon1, polygon2) {
   return polygon1.intersectsWith(polygon2);
-}
+};
 
 RegularPolygonFactory.prototype.draw = function(ctx, polygon) {
   ctx.beginPath();
@@ -131,7 +131,7 @@ RegularPolygonFactory.prototype.draw = function(ctx, polygon) {
   }
   ctx.closePath();
   ctx.fill();
-}
+};
 
 document.addEventListener('DOMContentLoaded', function() {
   var canvas = document.getElementById('canvas');
@@ -179,14 +179,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
       var shape_factory = {
         'Circle': CircleFactory, 'Regular polygon': RegularPolygonFactory
-      }[ishihara_input.shape_factory]
-      var shape_factory = new shape_factory(JSON.parse(JSON.stringify(ishihara_input)));
+      }[ishihara_input.shape_factory];
+      shape_factory = new shape_factory(JSON.parse(JSON.stringify(ishihara_input)));
 
       var tree = new kdTree([], function(a, b) {
         return Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2);
       }, ['x', 'y']);
 
-      var area = canvas.width * canvas.height;
       var failed_in_row = 0;
 
       var check_nearest = Math.ceil(
@@ -195,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       var step = function() {
         if (!generating) {
-          return
+          return;
         }
         for (var tries = 0; tries < ishihara_input.speed; tries++) {
           var shape = shape_factory.generate(circular_area);
@@ -218,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           failed_in_row = 0;
 
-          if (shape_factory.overlaps_image(img_data, shape) != invert_colors) {
+          if (shape_factory.overlaps_image(img_data, shape) !== invert_colors) {
             ctx.fillStyle = colors_on[draw_style][Math.floor(Math.random() * colors_on[draw_style].length)];
           } else {
             ctx.fillStyle = colors_off[draw_style][Math.floor(Math.random() * colors_off[draw_style].length)];
@@ -268,10 +267,10 @@ document.addEventListener('DOMContentLoaded', function() {
     'Protanomaly': 4, 'Viewable by all': 5, 'Colorblind only': 6
   }).name("Style");
   gui.add(ishihara_input, 'speed', 10, 1000).name("Speed");
-  gui.add(ishihara_input, 'min_radius', 2, 50).name("Min radius").onChange(function(value) {
+  gui.add(ishihara_input, 'min_radius', 2, 50).name("Min radius").onChange(function() {
     ishihara_input.max_radius = Math.max(ishihara_input.min_radius, ishihara_input.max_radius);
   }).listen();
-  gui.add(ishihara_input, 'max_radius', 2, 50).name("Max radius").onChange(function(value) {
+  gui.add(ishihara_input, 'max_radius', 2, 50).name("Max radius").onChange(function() {
     ishihara_input.min_radius = Math.min(ishihara_input.min_radius, ishihara_input.max_radius);
   }).listen();
   gui.add(ishihara_input, 'draw_ratio', 0, 1, 0.01).name("Draw ratio");
@@ -384,8 +383,8 @@ document.addEventListener('DOMContentLoaded', function() {
           canvas.height = img.height;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      }
-    }
+      };
+    };
     reader.readAsDataURL(e.target.files[0]);
   }, false);
 });
