@@ -231,6 +231,15 @@ document.addEventListener('DOMContentLoaded', function() {
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  var img_canvas = document.createElement('canvas');
+  var img_ctx = img_canvas.getContext('2d');
+
+  img_ctx.canvas.width  = max_width;
+  img_ctx.canvas.height = max_height;
+
+  img_ctx.fillStyle = "white";
+  img_ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   var ishihara_input = {
     load_image: function() {
       var image_upload = document.getElementById('image_upload');
@@ -258,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       var draw_style = Number(ishihara_input.style);
 
-      var img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      var img_data = img_ctx.getImageData(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -340,6 +349,8 @@ document.addEventListener('DOMContentLoaded', function() {
     clear: function() {
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      img_ctx.fillStyle = "white";
+      img_ctx.fillRect(0, 0, canvas.width, canvas.height);
     },
     stop: function() {
       generating = false;
@@ -411,6 +422,22 @@ document.addEventListener('DOMContentLoaded', function() {
   var generating = false;
   var x, y;
 
+  var hand_draw = function(ctx, style, x1, y1, x2, y2) {
+    if (x2 && y2) {
+      ctx.beginPath();
+      ctx.strokeStyle = style;
+      ctx.moveTo(x1, y1);
+      ctx.lineWidth = 15;
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.fillStyle = style;
+    ctx.arc(x1, y1, 7.5, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.closePath();
+  };
+
   canvas.addEventListener('mousedown', function(e) {
     if (e.button === 0) {
       painting = true;
@@ -420,13 +447,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (generating) return;
 
-      ctx.beginPath();
-      ctx.fillStyle = e.ctrlKey ? '#FFF' : '#000';
-      ctx.arc(x, y, 7.25, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.closePath();
+      hand_draw(ctx, e.ctrlKey ? '#FFF' : '#000', x, y)
+      hand_draw(img_ctx, e.ctrlKey ? '#FFF' : '#000', x, y)
     }
   });
+
   canvas.addEventListener('mouseup', function(e) {
     if (e.button === 0) {
       painting = false;
@@ -436,11 +461,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (generating) return;
 
-      ctx.beginPath();
-      ctx.fillStyle = e.ctrlKey ? '#FFF' : '#000';
-      ctx.arc(x, y, 7.25, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.closePath();
+      hand_draw(ctx, e.ctrlKey ? '#FFF' : '#000', x, y)
+      hand_draw(img_ctx, e.ctrlKey ? '#FFF' : '#000', x, y)
     }
   });
   canvas.addEventListener('mousemove', function(e) {
@@ -448,18 +470,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var curr_x = e.pageX - this.offsetLeft;
     var curr_y = e.pageY - this.offsetTop;
 
-    ctx.beginPath();
-    ctx.strokeStyle = e.ctrlKey ? '#FFF' : '#000';
-    ctx.moveTo(x, y);
-    ctx.lineWidth = 15;
-    ctx.lineTo(curr_x, curr_y);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.fillStyle = e.ctrlKey ? '#FFF' : '#000';
-    ctx.arc(x, y, 7.25, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.closePath();
+    hand_draw(ctx, e.ctrlKey ? '#FFF' : '#000', curr_x, curr_y, x, y)
+    hand_draw(img_ctx, e.ctrlKey ? '#FFF' : '#000', curr_x, curr_y, x, y)
 
     x = curr_x;
     y = curr_y;
@@ -480,6 +492,10 @@ document.addEventListener('DOMContentLoaded', function() {
           canvas.height = img.height;
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        img_canvas.width = canvas.width;
+        img_canvas.height = canvas.height;
+        img_ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       };
     };
     reader.readAsDataURL(e.target.files[0]);
