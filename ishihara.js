@@ -175,6 +175,49 @@ CrossFactory.prototype.generate = function(circular_area) {
   return [polygon1, polygon2];
 };
 
+function StarFactory() {
+  RegularPolygonFactory.apply(this, arguments);
+}
+
+StarFactory.prototype = Object.create(RegularPolygonFactory.prototype);
+StarFactory.prototype.constructor = RegularPolygonFactory;
+
+StarFactory.prototype.generate = function(circular_area) {
+  var min_radius = this.options.min_radius;
+  var max_radius = this.options.max_radius;
+  var radius = min_radius + Math.random() * (max_radius - min_radius);
+
+  if (circular_area) {
+    var angle = Math.random() * 2 * Math.PI;
+    var distance_from_center = Math.random() * (Math.min(canvas.width, canvas.height) * 0.48 - radius);
+    var x = canvas.width  * 0.5 + Math.cos(angle) * distance_from_center;
+    var y = canvas.height * 0.5 + Math.sin(angle) * distance_from_center;
+  } else {
+    var x = radius + Math.random() * (canvas.width  - radius * 2);
+    var y = radius + Math.random() * (canvas.height - radius * 2);
+  }
+
+  var polygon1 = new Polygon(x, y);
+  var polygon2 = new Polygon(x, y);
+
+  for (var i = 0; i < 4; i++) {
+    polygon1.addPoint({
+      x: Math.cos(Math.PI * 2 * (i / 4)) * radius,
+      y: Math.sin(Math.PI * 2 * (i / 4)) * radius / 4,
+    });
+    polygon2.addPoint({
+      x: Math.cos(Math.PI * 2 * (i / 4)) * radius,
+      y: Math.sin(Math.PI * 2 * (i / 4)) * radius / 4,
+    });
+  }
+
+  var rot = Math.random() * 2 * Math.PI;
+  polygon1.rotate(rot);
+  polygon2.rotate(rot + Math.PI / 2);
+
+  return [polygon1, polygon2];
+};
+
 document.addEventListener('DOMContentLoaded', function() {
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
@@ -222,7 +265,8 @@ document.addEventListener('DOMContentLoaded', function() {
       var shape_factory = {
         'Circle': CircleFactory,
         'Regular polygon': RegularPolygonFactory,
-        'Cross': CrossFactory
+        'Cross': CrossFactory,
+        'Star': StarFactory
       }[ishihara_input.shape_factory];
       shape_factory = new shape_factory(JSON.parse(JSON.stringify(ishihara_input)));
 
@@ -311,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
   gui.add(ishihara_input, 'circular').name("Circular");
   gui.add(ishihara_input, 'resize').name("Resize");
   gui.add(ishihara_input, 'invert_colors').name("Invert colors");
-  gui.add(ishihara_input, 'shape_factory', ['Circle', 'Regular polygon', 'Cross']).onChange(function(value) {
+  gui.add(ishihara_input, 'shape_factory', ['Circle', 'Regular polygon', 'Cross', 'Star']).onChange(function(value) {
     hide_gui_element('sides', value !== 'Regular polygon');
   }).name("Shape");
   gui.add(ishihara_input, 'sides', 3, 12, 1);
