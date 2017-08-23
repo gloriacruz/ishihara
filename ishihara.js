@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       var check_nearest = Math.ceil(
         Math.max(ishihara_input.min_radius, ishihara_input.max_radius) /
-        Math.min(ishihara_input.min_radius, ishihara_input.max_radius) * 2);
+        Math.min(ishihara_input.min_radius, ishihara_input.max_radius) * 5);
 
       var step = function() {
         if (!generating) {
